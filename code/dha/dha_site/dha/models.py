@@ -7,6 +7,8 @@ import string
 from django.db import models
 from django.conf import settings
 
+from .utils.functions import remove_docker_container
+
 class User(models.Model):
     username = models.CharField(max_length=100, unique=True)
 
@@ -97,7 +99,7 @@ class Network(models.Model):
 
         return network
     
-    def delete(self, using = ..., keep_parents = ...):
+    def delete(self, *args, **kwargs):
         try:
             subprocess.run()
         except subprocess.CalledProcessError as e:
@@ -107,7 +109,7 @@ class Network(models.Model):
         return super().delete(using, keep_parents)
 
 class Instance(models.Model):
-    name = models.CharField(max_length=255)  # Name of the container
+    name = models.CharField(max_length=255, unique=True)  # Name of the container
     created_at = models.DateTimeField(auto_now_add=True)  # Timestamp for creation
     status = models.CharField(max_length=50, choices=[  # Status of the container
         ('running', 'Running'),
@@ -133,8 +135,33 @@ class Instance(models.Model):
 
     def __str__(self):
         return self.name
-    
 
+    def delete(self, using = ..., keep_parents = ...):
+        print("In models.py, deleting an instance object")
+        try:
+            self.network.delete()
+            self.volume.delete()
+        except subprocess.CalledProcessError:
+            logging.error("There was an issue deleting the network and the volume")
+            raise Exception("There was an issue deleting the network and the volume")
+        
+        try:
+            # delete docker container
+            remove_docker_container(self.name)
+
+            # delete DB record
+            super().delete(using=using, keep_parents=keep_parents)
+
+            # delete the system user if it has no more instances associated to it
+            if not self.user.instances.count():
+                self.user.delete()
+
+        except subprocess.CalledProcessError:
+            logging.error("There was an issue deleting the docker container")
+            raise Exception("There was an issue deleting the docker container")
+
+        # return super().delete(using, keep_parents)
+    
 # TODO work on volume mount point
 class Volume(models.Model):
     name = models.CharField(max_length=255) 
@@ -161,7 +188,6 @@ class Volume(models.Model):
     @classmethod
     def generate_random_volume_name(cls):
         return "volume_" + ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
-    
 
     @classmethod
     def create(cls, instance=None, mount_point=None, name=None):

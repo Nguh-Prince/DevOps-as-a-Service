@@ -4,10 +4,12 @@ from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext as _
 
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from . import serializers
 from .models import Instance
+from .utils.functions import get_container_status
 
 class MultipleSerializerViewSet(viewsets.GenericViewSet):
     serializer_classes = {}
@@ -41,4 +43,12 @@ class InstanceViewSet(viewsets.ModelViewSet, MultipleSerializerViewSet):
 
         logging.info(f"Container instance ({instance.name}) successfully created")
         return Response(data, status=status.HTTP_201_CREATED)
+    
+    @action(methods=['POST'], detail=True)
+    def status(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        status = get_container_status(instance.name)
+
+        return Response(status, status=status.HTTP_200_OK)
     
