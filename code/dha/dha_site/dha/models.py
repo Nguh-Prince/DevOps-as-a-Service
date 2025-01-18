@@ -48,8 +48,14 @@ class User(models.Model):
         return user
     
     def delete(self, using = ..., keep_parents = ...):
-        # TODO: delete system user
-
+        try:
+            subprocess.run(
+                ["sudo", "userdel", "-r", "username"]
+            )
+        except subprocess.CalledProcessError as e:
+            logging.error("Error deleting a user and their folder")
+            raise Exception(f"Failed to delete the user")
+        
         # delete directory that was created
         subprocess.run(
             ["sudo", "rm", "-r", self.directory]
@@ -92,7 +98,11 @@ class Network(models.Model):
         return network
     
     def delete(self, using = ..., keep_parents = ...):
-        # TODO: delete docker network that was created
+        try:
+            subprocess.run()
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to delete docker network")
+            raise e
 
         return super().delete(using, keep_parents)
 
