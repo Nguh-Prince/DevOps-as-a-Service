@@ -16,9 +16,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
     'rest_framework',
-    'dha'
+    'dha',
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'DHA API',
+    'DESCRIPTION': 'API for the Dynamic Host Agent',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # OTHER SETTINGS
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -103,6 +117,14 @@ LOG_BASEDIR = BASE_DIR.parent / "logs" #os.path.join(BASE_DIR, "..", "logs")
 LOG_PATHS = {
     key: LOG_BASEDIR / f"{key}.txt" for key in ["info", "debug", "warning", "error", "critical"]
 }
+
+for path in LOG_PATHS.values():
+    os.makedirs(path.parent, exist_ok=True)
+
+    # Creer le fichier de log, s'il n'existe pas
+    if not os.path.exists(path):
+        f = open(path, "w")
+        f.close()
 
 LOGGING = {
     'version': 1,
