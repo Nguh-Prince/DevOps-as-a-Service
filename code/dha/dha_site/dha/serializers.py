@@ -89,12 +89,12 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
                     "--hostname", f"{host_name}",
                     "--network", network.name,
                     "--env", get_omnibus_config(host_name, http_host_port, root_password, root_email ),
-                    "--mount", f"type=volume,source={volume.name},target=/app/data",
                     "--publish", f"{http_host_port}:80",
                     "--restart", "always",
                     "--volume", f"{user.get_directory('config')}:/etc/gitlab",
                     "--volume", f"{user.get_directory('logs')}:/var/log/gitlab",
                     "--volume", f"{user.get_directory('data')}:/var/opt/gitlab",
+                    "--user", user.uid_gid,
                     settings.DEFAULT_BASE_IMAGE
                 ],
                 check=True

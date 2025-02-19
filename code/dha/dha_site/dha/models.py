@@ -91,6 +91,10 @@ class User(models.Model):
 
         return os.path.join(self.directory, _dir)
 
+    @property
+    def uid_gid(self):
+        return f"{self.uid}:{self.gid}"
+
 class Network(models.Model):
     name = models.CharField(max_length=255, unique=True)  # Network name
     cidr = models.CharField(max_length=50, null=True)  # CIDR notation for the network
