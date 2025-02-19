@@ -54,3 +54,6 @@ def get_container_status(container_name_or_id):
         status_detail = status  # Use Docker's base status for other cases (e.g., 'stopped', 'exited')
 
     return status_detail
+
+def get_omnibus_config(hostname, port, root_password, root_email) -> str:
+    return f"""GITLAB_OMNIBUS_CONFIG="external_url 'http://{hostname}:{port}'; gitlab_rails['lfs_enabled'] = true; gitlab_rails['initial_root_password'] = '{root_password}'; gitlab_rails['initial_root_email'] = '{root_email}'" """
