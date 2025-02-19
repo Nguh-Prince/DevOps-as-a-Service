@@ -108,7 +108,10 @@ DEFAULT_BASE_IMAGE = "gitlab/gitlab-ce:latest"
 
 # this is where all the users created by the system will be stored
 # TODO: change this to use an environment variable instead
-INSTANCE_USERS_DIRECTORY = "/home/prince/Desktop/dha-users"
+INSTANCE_USERS_DIRECTORY = BASE_DIR.parent / "dha-users"
+
+if not os.path.exists(INSTANCE_USERS_DIRECTORY):
+    os.makedirs(INSTANCE_USERS_DIRECTORY, exist_ok=True)
 
 HOST_NAME = "127.0.0.1"
 

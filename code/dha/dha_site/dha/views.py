@@ -50,11 +50,16 @@ class InstanceViewSet(viewsets.ModelViewSet, MultipleSerializerViewSet):
     def status(self, request, *args, **kwargs):
         try:
             instance = self.get_object()
-            status = instance.get_status()
+            _status = instance.get_status()
 
-            return Response(status)
-        except docker.errors.NotFound:
-            return Response(f"No image with name {instance.name} found", status=status.HTTP_404_NOT_FOUND)
+            return Response(_status)
+        except docker.errors.NotFound as e:
+            try:
+                instance.delete(ignore_errors=True)
+            except Exception as e:
+                logging.error("Error deleting an instance that was not linked to a docker container")
+                
+            return Response(f"No image with name {instance.name} found. Go back to the instances list: /api/instances", status=status.HTTP_404_NOT_FOUND)
 
     @action(methods=['POST'], detail=True)
     def stop(self, request, *args, **kwargs):

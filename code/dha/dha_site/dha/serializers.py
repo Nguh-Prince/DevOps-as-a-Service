@@ -27,7 +27,7 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
         port_keys = ["http_host_port", "https_host_port"]
 
         for port_key in port_keys:
-            if port_key not in attrs:
+            if port_key not in attrs or not attrs[port_key]:
                 # generate random port number
                 while True:
                     port = random.randint(1024, 65535)
@@ -45,7 +45,7 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
                 if Instance.objects.filter(
                         Q(http_host_port=port) | Q(https_host_port=port) | Q(ssh_host_port=port)
                     ):
-                        raise serializers.ValidationError(f"{port_key} already assigned to another instance")
+                        raise serializers.ValidationError(f"{port_key} '{port}' already assigned to another instance")
 
         return super().validate(attrs)
 
@@ -53,7 +53,7 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
         value = slugify(value)
 
         if Instance.objects.filter(name=value).count() > 0:
-            raise serializers.ValidationError(f"{name} already used by another instance. Please choose another")
+            raise serializers.ValidationError(f"{value} already used by another instance. Please choose another")
 
         return value
 
@@ -72,8 +72,12 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
             data_volume = Volume.create(name=instance_name + "-data-volume")
             logs_volume = Volume.create(name=instance_name + "-logs-volume")
         except Exception as e:
-            user.delete()
-            network.delete()
+            breakpoint()
+            try:
+                user.delete()
+                network.delete()
+            except Exception as _:
+                pass
             raise e
         
         try:
@@ -81,7 +85,7 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
             host_name = settings.HOST_NAME
             root_password = validated_data.pop('root_password')
             root_email = validated_data.pop('root_email')
-
+            logging.info(f"Creating container with network {network_name}, http port {http_host_port}, executed by user {user.username}, with id {user.uid_gid}")
             subprocess.run(
                 [
                     "docker", "run", "-d", 
@@ -90,11 +94,10 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
                     "--network", network.name,
                     "--env", get_omnibus_config(host_name, http_host_port, root_password, root_email ),
                     "--publish", f"{http_host_port}:80",
-                    "--restart", "always",
                     "--volume", f"{user.get_directory('config')}:/etc/gitlab",
                     "--volume", f"{user.get_directory('logs')}:/var/log/gitlab",
                     "--volume", f"{user.get_directory('data')}:/var/opt/gitlab",
-                    "--user", user.uid_gid,
+                    # "--user", user.uid_gid,
                     settings.DEFAULT_BASE_IMAGE
                 ],
                 check=True
@@ -106,8 +109,10 @@ class CreateInstanceSerializer(serializers.ModelSerializer):
         instance = Instance.objects.create(
             **validated_data, user=user, network=network, directory=user.directory, status='created'
         )
-        volume.attached_instance = instance
-        volume.save()
+
+        for volume in [config_volume, data_volume, logs_volume]:
+            volume.attached_instance = instance
+            volume.save()
 
         return instance
     

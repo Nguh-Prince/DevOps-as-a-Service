@@ -30,7 +30,7 @@ class User(models.Model):
         try:
             # create user with no shell / login
             subprocess.run(
-                ["sudo", "useradd", "-M", "-r", "-s", "/usr/sbin/nologin", username],
+                ["useradd", "-M", "-r", "-s", "/usr/sbin/nologin", username],
                 check=True
             )
 
@@ -49,7 +49,7 @@ class User(models.Model):
         
         try:
             subprocess.run(
-                ["sudo", "chown", "-R", f"{username}:{username}", directory],
+                ["chown", "-R", f"{username}:{username}", directory],
                 check=True
             )
         except subprocess.CalledProcessError as e:
@@ -57,7 +57,7 @@ class User(models.Model):
 
             # delete user and delete folder
             subprocess.run(
-                ["sudo", "userdel", "-r", username],
+                ["userdel", "-r", username],
                 check=True
             )
             subprocess.run(
@@ -72,7 +72,7 @@ class User(models.Model):
     def delete(self, using = ..., keep_parents = ...):
         try:
             subprocess.run(
-                ["sudo", "userdel", "-r", "username"]
+                ["userdel", "-r", "username"]
             )
         except subprocess.CalledProcessError as e:
             logging.error("Error deleting a user and their folder")
@@ -80,7 +80,7 @@ class User(models.Model):
         
         # delete directory that was created
         subprocess.run(
-            ["sudo", "rm", "-r", self.directory]
+            ["rm", "-r", self.directory]
         )
         return super().delete(using, keep_parents)
 
@@ -199,12 +199,19 @@ class Instance(models.Model):
         except docker.errors.NotFound as e:
             raise e
 
-    def delete(self, using = ..., keep_parents = ...):
+    def delete(self, *args, **kwargs):
         print("In models.py, deleting an instance object")
         try:
-            self.network.delete()
-            self.volume.delete()
+            if self.network and isinstance(self.network, Network):
+                self.network.delete()
+    
+            for volume in self.volumes.all():
+                volume.delete()
+
         except subprocess.CalledProcessError:
+            if 'ignore_errors' in kwargs and kwargs['ignore_errors']:
+                kwargs.pop('ignore_errors')
+                super().delete(*args, **kwargs)
             logging.error("There was an issue deleting the network and the volume")
             raise Exception("There was an issue deleting the network and the volume")
         
@@ -213,7 +220,7 @@ class Instance(models.Model):
             remove_docker_container(self.name)
 
             # delete DB record
-            super().delete(using=using, keep_parents=keep_parents)
+            super().delete(*args, **kwargs)
 
             # delete the system user if it has no more instances associated to it
             if not self.user.instances.count():
