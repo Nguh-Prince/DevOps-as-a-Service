@@ -1,6 +1,13 @@
+import logging
 import subprocess
 import re
 import docker
+
+def log_error(message, error, raise_exception=True):
+    logging.error(f"{message}. Error: {error}")
+
+    if raise_exception:
+        raise error
 
 def slugify(string):
     slug = string.lower()
@@ -57,3 +64,19 @@ def get_container_status(container_name_or_id):
 
 def get_omnibus_config(hostname, port, root_password, root_email) -> str:
     return f"""GITLAB_OMNIBUS_CONFIG="external_url 'http://{hostname}:{port}'; gitlab_rails['lfs_enabled'] = true; gitlab_rails['initial_root_password'] = '{root_password}'; gitlab_rails['initial_root_email'] = '{root_email}'" """
+
+def get_uid_and_gid(username):
+    try:
+        result = subprocess.run(
+            ["id", "-u", username], capture_output=True, text=True, check=True
+        )
+        uid = int(result.stdout.strip())  # Convert output to int
+
+        result = subprocess.run(
+            ["id", "-g", username], capture_output=True, text=True, check=True
+        )
+        gid = int(result.stdout.strip())  # Convert output to int
+
+        return uid, gid
+    except subprocess.CalledProcessError as e:
+        log_error(f"Error getting uid and gid for {username}", e)

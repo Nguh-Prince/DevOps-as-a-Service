@@ -7,7 +7,7 @@ import string
 from django.db import models
 from django.conf import settings
 
-from .utils.functions import remove_docker_container, get_container_status
+from .utils.functions import remove_docker_container, get_container_status, get_uid_and_gid, log_error
 import docker
 
 class User(models.Model):
@@ -15,6 +15,8 @@ class User(models.Model):
 
     # directory where volumes for the instance(s) will be mounted
     directory = models.CharField(max_length=255)
+    uid = models.IntegerField(null=True)
+    gid = models.IntegerField(null=True)
 
     @classmethod
     def create(cls, username=None):
@@ -31,6 +33,8 @@ class User(models.Model):
                 ["sudo", "useradd", "-M", "-r", "-s", "/usr/sbin/nologin", username],
                 check=True
             )
+
+            uid, gid = get_uid_and_gid(username)
 
             # create directories for the logs, config and data
             directory = os.path.join(settings.INSTANCE_USERS_DIRECTORY, username)
@@ -61,7 +65,7 @@ class User(models.Model):
             )
             raise Exception(f"Failed to set folder ownership: {e}")
         
-        user = cls.objects.create(username=username, directory=directory)
+        user = cls.objects.create(username=username, directory=directory, uid=uid, gid=gid)
 
         return user
     
@@ -138,7 +142,7 @@ class Network(models.Model):
             logging.error(f"Failed to delete docker network")
             raise e
 
-        return super().delete(using, keep_parents)
+        return super().delete(*args, **kwargs)
 
 class Instance(models.Model):
     name = models.CharField(max_length=255, unique=True)  # Name of the container
@@ -215,8 +219,6 @@ class Instance(models.Model):
             logging.error("There was an issue deleting the docker container")
             raise Exception("There was an issue deleting the docker container")
 
-        # return super().delete(using, keep_parents)
-    
 # TODO work on volume mount point
 class Volume(models.Model):
     name = models.CharField(max_length=255) 
@@ -247,11 +249,23 @@ class Volume(models.Model):
     @classmethod
     def create(cls, instance=None, mount_point=None, name=None):
         name = cls.generate_random_volume_name() if not name else name
+
+        try:
+            subprocess.run(["docker", "volume", "create", name], check=True)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to create docker volume. Error: {e}")
+            raise e
+
         volume = cls.objects.create(name=name, attached_instance=instance, mount_point=mount_point)
 
         return volume
-    
-    def delete(self, using = ..., keep_parents = ...):
-        # TODO: delete docker volume that was created
 
-        return super().delete(using, keep_parents)
+    def delete(self, *args, **kwargs):
+        # TODO: delete docker volume that was created
+        try:
+            subprocess.run(["docker", "volume", "rm", self.name], check=True)
+        except subprocess.CalledProcessError as e:
+            logging.error(f"Failed to delete docker volume. Error: {e}")
+            raise e
+
+        return super().delete(*args, **kwargs)
