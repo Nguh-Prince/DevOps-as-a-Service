@@ -3,11 +3,15 @@ import logging
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.translation import gettext as _
 
+import docker
+
 from rest_framework import status, viewsets
+from rest_framework.decorators import action, permission_classes
 from rest_framework.response import Response
 
 from . import serializers
 from .models import Instance
+from .utils.functions import get_container_status
 
 class MultipleSerializerViewSet(viewsets.GenericViewSet):
     serializer_classes = {}
@@ -42,3 +46,22 @@ class InstanceViewSet(viewsets.ModelViewSet, MultipleSerializerViewSet):
         logging.info(f"Container instance ({instance.name}) successfully created")
         return Response(data, status=status.HTTP_201_CREATED)
     
+    @action(methods=['GET'], detail=True)
+    def status(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+            status = instance.get_status()
+
+            return Response(status)
+        except docker.errors.NotFound:
+            return Response(f"No image with name {instance.name} found", status=status.HTTP_404_NOT_FOUND)
+
+    @action(methods=['POST'], detail=True)
+    def stop(self, request, *args, **kwargs):
+        instance = self.get_object()
+        instance.stop()
+
+        return Response("Instance stopped successfully")
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
