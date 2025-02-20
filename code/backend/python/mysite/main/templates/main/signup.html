@@ -1,0 +1,110 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{% static 'main/favicon.svg' %}" type="image/x-icon" />
+    <title>SafeTrack {% block title %}|{% endblock %}</title>
+
+    <link rel="stylesheet" href="{% static 'main/css/bootstrap.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'main/css/lineicons.css' %}" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="{% static 'main/css/materialdesignicons.min.css' %}" rel="stylesheet"
+        type="text/css" />
+    <link rel="stylesheet" href="{% static 'main/css/fullcalendar.css' %}" />
+    <link rel="stylesheet" href="{% static 'main/css/main.css' %}" />
+</head>
+
+<body>
+    <section class="signin-section w-full h-full" style="width: 100vw; height: 100vh;">
+        <div class="container-fluid bg-red-500 w-100 h-100 d-flex flex-column align-items-center justify-content-center">
+            <div class="row g-0 auth-row">
+                <div class="col-lg-6">
+                  <div class="auth-cover-wrapper bg-primary-100">
+                    <div class="auth-cover">
+                      <div class="title text-center">
+                        <h1 class="text-primary mb-10">Sign up</h1>
+                        <p class="text-medium">
+                          Create an account
+                          <br class="d-sm-block" />
+                          to manage your events
+                        </p>
+                      </div>
+                      <div class="cover-image">
+                        <img src="{% static 'main/images/auth/signin-image.svg' %}" alt="" />
+                      </div>
+                      <div class="shape-image">
+                        <img src="{% static 'main/images/auth/shape.svg' %}" alt="" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- end col -->
+                <div class="col-lg-6">
+                  <div class="signup-wrapper">
+                    <div class="form-wrapper">
+                      <form action="{% url 'signup' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="row">
+                          <div class="col-12">
+                            <div class="input-style-1">
+                              <label>Username</label>
+                              <input type="text" placeholder="johndoe" name="username" />
+                            </div>
+                          </div>
+                          <!-- end col -->
+                          <div class="col-12">
+                            <div class="input-style-1">
+                              <label>Email</label>
+                              <input type="email" placeholder="Email" name="email" />
+                            </div>
+                          </div>
+                          <!-- end col -->
+                          <div class="col-12">
+                            <div class="input-style-1">
+                              <label>Password</label>
+                              <input type="password" placeholder="Password" name="password" />
+                            </div>
+                          </div>
+
+                          <div class="col-xxl-6 col-lg-12 col-md-6">
+                            <div class="form-check checkbox-style mb-30">
+                                <span>Avez-vous deja un compte</span>
+                              <a class="form-check-afor="checkbox-remember" href="{% url 'login' %}">
+                                Se connecter</a>
+                            </div>
+                          </div>
+                          
+                          <!-- end col -->
+                          <div class="col-12">
+                            <div class="button-group d-flex justify-content-center flex-wrap">
+                              <button class="main-btn primary-btn btn-hover w-100 text-center">
+                                Sign Up
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                        <!-- end row -->
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <!-- end col -->
+              </div>
+        </div>
+    </section>
+
+    <script src="{% static 'main/js/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'main/js/Chart.min.js' %}"></script>
+    <script src="{% static 'main/js/dynamic-pie-chart.js' %}"></script>
+    <script src="{% static 'main/js/moment.min.js' %}"></script>
+    <script src="{% static 'main/js/fullcalendar.js' %}"></script>
+    <script src="{% static 'main/js/jvectormap.min.js' %}"></script>
+    <script src="{% static 'main/js/world-merc.js' %}"></script>
+    <script src="{% static 'main/js/polyfill.js' %}"></script>
+    <script src="{% static 'main/js/main.js' %}"></script>
+</body>
+
+</html>

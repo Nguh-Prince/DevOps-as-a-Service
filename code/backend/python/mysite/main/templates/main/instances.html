@@ -1,0 +1,449 @@
+{% extends 'main/sidebar_base.html' %}
+{% load i18n %}
+
+{% block events_active %}active{% endblock %}
+
+{% block page_content %}
+<section>
+    <div id="errorMessages"></div>
+    <div id="toastContainer" class="toast-container position-fixed bottom-0 end-0 p-3"></div>
+
+    <div class="container-fluid pt-30">
+        <div class="tables-wrapper">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card-style mb-30">
+                        <div
+                            style="display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+                            <div>
+                                <h3 class="mb-10">Instances</h3>
+                            </div>
+                            <div class="title d-flex flex-wrap justify-content-end">
+                                <button type="button" class="main-btn primary-btn btn-hover btn-sm"
+                                    data-bs-toggle="modal" data-bs-target="#eventModal">
+                                    <i class="lni lni-plus mr-5"></i> Ajouter
+                                </button>
+                            </div>
+                        </div>
+                        <div class="table-wrapper table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th class="lead-info">
+                                            <h6>{% trans "Nom" %}</h6>
+                                        </th>
+                                        <th class="lead-email">
+                                            <h6>{% trans "Date cree" %}</h6>
+                                        </th>
+                                        <th class="lead-phone">
+                                            <h6>{% trans "Port" %}</h6>
+                                        </th>
+                                        <th class="lead-company">
+                                            <h6>{% trans "Etat" %}</h6>
+                                        </th>
+                                        <th>
+                                            <h6>{% trans "Lien" %}</h6>
+                                        </th>
+                                        <th>
+                                            <h6>{% trans "Actions" %}</h6>
+                                        </th>
+                                    </tr>
+                                    <!-- end table row-->
+                                </thead>
+                                <tbody>
+                                    {% for instance in instances %}
+                                    <tr>
+                                        <td class="min-width">
+                                            <div class="lead">
+                                                <div class="lead-text">
+                                                    <span>{{ instance.name }}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="min-width">
+                                            <p>{{ instance.date_creation }}</p>
+                                        </td>
+                                        <td class="min-width">
+                                            <p>{{ instance.host_port }}</p>
+                                        </td>
+                                        <td>
+                                            {{ instance.state }}
+                                        </td>
+                                        <td>
+                                            <a href="{{ instance.server.hostname }}:{{ instance.host_port }}">lien</a>
+                                        </td>
+
+                                        <td>
+                                            <div class="action">
+                                                <button class="text-primary edit-button" data-id="{{ instances.id }}"
+                                                    data-bs-toggle="modal" data-bs-target="#editEventModal">
+                                                    <i class="lni lni-pause"></i>
+                                                </button>
+                                                <button class="text-danger delete-button" data-id="{{ instances.id }}"
+                                                    data-nom="{{ instances.nom }}" data-bs-toggle="modal"
+                                                    data-bs-target="#deleteEventModal">
+                                                    <i class="lni lni-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            <!-- end table -->
+                        </div>
+                    </div>
+                    <!-- end card -->
+                </div>
+                <!-- end col -->
+            </div>
+        </div>
+        <!-- Invoice Wrapper End -->
+    </div>
+    <!-- end container -->
+</section>
+
+<!-- Modal pour la création d'instance -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">{{ _('Créer un nouvel instance') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="eventForm">
+                    {% csrf_token %}
+                    <!-- <p>{{ _("Informations generales") }}</p> -->
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="new-instance-name" class="form-label">{% trans "Nom de l'instance" %}*</label>
+                            <input type="text" name="name" id="new-instance-name" class="form-control" />
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="new-instance-port" class="form-label">{% trans "Port" %}*</label>
+                            <input type="number" class="form-control" name="port" id="new-instance-port">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="new-instance-admin-password">{% trans "Mot de passe admin" %}</label>
+                            <input type="password" class="form-control" name="admin_password" id="mot-de-passe-admin">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler')  }}</button>
+                        <button type="submit" class="btn btn-primary">{{ _('Créer') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la modification d'événement -->
+<div class="modal fade" id="editEventModal" tabindex="-1" aria-labelledby="editEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editEventModalLabel">{{ _('Modifier l\'événement') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" id="editEventForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="id" id="editEventId">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_nom" class="form-label">{{ edit_form.nom.label }}</label>
+                            <input type="text" name="nom" id="edit_nom" class="form-control">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ form.categorie.id_for_label }}" class="form-label">{{ edit_form.categorie.label }}</label>
+                            {{ edit_form.categorie }}
+                        </div>
+
+                        <div class="col-md-3">
+                            <label for="{{ form.type.id_for_label }}" class="form-label">{{ edit_form.type.label }}</label>
+                            {{ edit_form.type }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.organisateur.id_for_label }}" class="form-label">{{ edit_form.organisateur.label }}</label>
+                            {{ edit_form.organisateur }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.contact.id_for_label }}" class="form-label">{{ edit_form.contact.label }}</label>
+                            {{ edit_form.contact }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="edit_nombre_de_places" class="form-label">{{ edit_form.nombres_de_places.label }}</label>
+                            <input type="number" name="nombres_de_places" id="edit_nombre_de_places"
+                                class="form-control">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="edit_lieu" class="form-label">{{ edit_form.lieu.label }}</label>
+                            <input type="text" name="lieu" id="edit_lieu" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="edit_ville" class="form-label">{{ edit_form.ville.label }}</label>
+                            <input type="text" name="ville" id="edit_ville" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="edit_pays" class="form-label">{{ edit_form.pays.label }}</label>
+                            <input type="text" name="pays" id="edit_pays" class="form-control">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.date_heure_debut.id_for_label }}" class="form-label">{{ edit_form.date_heure_debut.label }}</label>
+                            {{ edit_form.date_heure_debut }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.date_heure_fin.id_for_label }}" class="form-label">{{ edit_form.date_heure_fin.label }}</label>
+                            {{ edit_form.date_heure_fin }}
+                        </div>
+                        <div class="col-md-12">
+                            <label for="{{ form.lien.id_for_label }}" class="form-label">{{ edit_form.lien.label }}</label>
+                            {{ edit_form.lien }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="edit_prix" class="form-label">{{ edit_form.prix.label }}</label>
+                            <input type="number" step="0.01" name="prix" id="edit_prix" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_rempli" class="form-label">{{ edit_form.rempli.label }}</label>
+                            <div class="form-check">
+                                <input type="checkbox" name="rempli" id="edit_rempli" class="form-check-input">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="edit_entree_gratuit" class="form-label">{{ edit_form.entree_gratuit.label }}</label>
+                            <div class="form-check">
+                                <input type="checkbox" name="entree_gratuit" id="edit_entree_gratuit"
+                                    class="form-check-input">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
+                        <button type="submit" class="btn btn-primary">{{ _('Modifier') }}</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal pour la confirmation de suppression d'événement -->
+<div class="modal fade" id="deleteEventModal" tabindex="-1" aria-labelledby="deleteEventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteEventModalLabel">{{ _('Confirmer la suppression') }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="deleteModalBody">
+                {{ _('Êtes-vous sûr de vouloir supprimer cet événement ?') }}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ _('Annuler') }}</button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">{{ _('Supprimer') }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function formatDate(dateString) {
+        const date = new Date(dateString);
+
+        // Format the date
+        return date.toISOString().slice(0, 19);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        function showToast(message, type) {
+            const toastContainer = document.getElementById("toastContainer");
+            const toast = document.createElement("div");
+            toast.className = `toast align-items-center text-bg-${type} border-0`;
+            toast.setAttribute("role", "alert");
+            toast.setAttribute("aria-live", "assertive");
+            toast.setAttribute("aria-atomic", "true");
+
+            toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">
+                    ${message}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        `;
+
+            toastContainer.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => {
+                toast.remove();
+            });
+        }
+
+        // Gestion de l'ajout d'événement
+        document.getElementById("eventForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let form = document.getElementById("eventForm");
+            let formData = new FormData(form);
+            console.log(formData)
+
+            for (let [key, value] of formData.entries()) {
+                console.log(key, value);
+            }
+
+            fetch(`/events/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast("{{ _('Événement créé avec succès!') }}", "success");
+                    location.reload();  // Refresh the page or update UI dynamically
+                } else {
+                    let errorDiv = document.getElementById("errorMessages");
+                    errorDiv.innerHTML = ""; // Clear previous errors
+                    for (const [field, errors] of Object.entries(data.errors)) {
+                        errors.forEach(error => {
+                            let errorElement = document.createElement("p");
+                            errorElement.style.color = "red";
+                            errorElement.innerText = `${field}: ${error}`;
+                            errorDiv.appendChild(errorElement);
+                        });
+                    }
+                }
+            })
+            .catch(error => console.error("Error:", error));
+        });
+
+        // Gestion de la modification d'événement
+        document.querySelectorAll(".edit-button").forEach(button => {
+            button.addEventListener("click", function () {
+                let eventId = this.getAttribute("data-id");
+                fetch(`/events/${eventId}/change/`, {
+                    headers: {
+                        "X-Requested-With": "XMLHttpRequest"
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(`Data gotten from backend`)
+                        console.log(data);
+
+                        document.getElementById("editEventId").value = data.event.id;
+                        document.getElementById("edit_nom").value = data.event.nom;
+                        document.getElementById("edit_nombre_de_places").value = data.event.nombres_de_places;
+                        document.getElementById("edit_lieu").value = data.event.lieu;
+                        document.getElementById("edit_ville").value = data.event.ville;
+                        document.getElementById("edit_pays").value = data.event.pays;
+                        document.getElementById("edit_prix").value = data.event.prix;
+                        document.getElementById("edit_rempli").checked = data.event.rempli;
+                        document.getElementById("edit_entree_gratuit").checked = data.event.entree_gratuit;
+
+                        let field_names = ["categorie", "type", "organisateur", "contact", "date_heure_debut", "date_heure_fin", "lien"]
+
+                        field_names.forEach((field) => {
+                            let value = data.event[field]
+
+                            if (field.startsWith('date')) {
+                                try {
+                                    value = formatDate(value);
+                                } catch (error) {
+                                    value = "";
+                                }
+                            }
+                            console.log(`Setting field edit_${field} to ${value}`)
+                            document.getElementById(`edit_${field}`).value = value
+                        })
+                    })
+                    .catch(error => console.error("Error:", error));
+            });
+        });
+
+        document.getElementById("editEventForm").addEventListener("submit", function (event) {
+            event.preventDefault();
+            let form = document.getElementById("editEventForm");
+            let formData = new FormData(form);
+            let eventId = formData.get("id");
+
+            fetch(`/events/${eventId}/change/`, {
+                method: "POST",
+                body: formData,
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast("{{ _('Événement modifié avec succès!') }}", "success");
+                        location.reload();  // Refresh the page or update UI dynamically
+                    } else {
+                        let errorDiv = document.getElementById("errorMessages");
+                        errorDiv.innerHTML = ""; // Clear previous errors
+                        for (const [field, errors] of Object.entries(data.errors)) {
+                            errors.forEach(error => {
+                                let errorElement = document.createElement("p");
+                                errorElement.style.color = "red";
+                                errorElement.innerText = `${field}: ${error}`;
+                                errorDiv.appendChild(errorElement);
+                            });
+                        }
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        });
+
+        // Gestion de la suppression d'événement
+        document.querySelectorAll(".delete-button").forEach(button => {
+            button.addEventListener("click", function () {
+                let eventId = this.getAttribute("data-id");
+                let eventName = this.getAttribute("data-nom");
+                document.getElementById("confirmDelete").setAttribute("data-id", eventId);
+                document.getElementById("deleteModalBody").innerText = `{{ _('Êtes-vous sûr de vouloir supprimer ') }} "${eventName}" {{ _(' ?')}}`;
+            });
+        });
+
+        document.getElementById("confirmDelete").addEventListener("click", function () {
+            let eventId = this.getAttribute("data-id");
+
+            fetch(`/events/${eventId}/delete/`, {
+                method: "POST",
+                headers: {
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast("{{ _('Événement supprimé avec succès!') }}", "success");
+                        location.reload();  // Refresh the page or update UI dynamically
+                    } else {
+                        showToast("{{ _('Une erreur s\'est produite.') }}", "danger");
+                    }
+                })
+                .catch(error => console.error("Error:", error));
+        });
+    });
+</script>
+{% endblock %}
